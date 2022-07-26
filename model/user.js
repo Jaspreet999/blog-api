@@ -8,7 +8,7 @@ const user = new Schema({
         required:true
     },
     password:{type:String,required:true},
-    Date:{type:Date,default:new Date().toLocaleDateString(),immutable:true},
+    Date:{type:Date,default:new Date(),immutable:true},
 })
 
 user.virtual("id").get(function(){

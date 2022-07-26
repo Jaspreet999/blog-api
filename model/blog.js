@@ -18,7 +18,7 @@ const blog = new Schema({
     },
     Date:{
         type:Date,
-        default:new Date().toLocaleDateString(),
+        default:new Date(),
         immutable:true
     },
     author:{

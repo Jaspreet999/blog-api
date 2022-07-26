@@ -1,48 +1,82 @@
 const User = require('../model/user')
-const {body,validationResult} = require('express-validator')
+const jwt = require('jsonwebtoken');
+const passport = require('passport')
 
-// exports.login_user = function(req,res){
-//     res.send("login service is not available")
-// }
+
+exports.login_user = function (req, res, next) {
+
+    passport.authenticate('local', {session: false}, (err, user, info) => {
+            if (err || !user) {
+                return res.status(400).json({
+                    message: 'Something is not right',
+                    user : user
+                });
+            }
+    
+            req.login(user, {session: false}, (err) => {
+               if (err) {
+                   res.send(err);
+               }
+    
+               // generate a signed son web token with the contents of user object and return it in the response
+    
+            const payload = {
+                username : user.username,
+                id:user._id
+            }
+            const token = jwt.sign(payload, 'random number',{expiresIn:"1d"});
+    
+            return res.status(200).json({
+                status:true,
+                message:"logged in successfully!!",
+                token:"Bearer "+token,
+                user:payload
+            })
+    
+               
+            });
+    
+        })(req, res);
+    
+}
+    
 
 exports.logout_user = function(req,res){
   res.send("first login or sign in")   
 }
 
-exports.signup_user = [
 
-  body('username','username must be required').trim().isLength({min:1}).escape(),
-  body('password').trim().isLength({min:4,max:16}).withMessage('password should be min 4 digits'),
-  body('confirmPassword').trim().isLength({min:4,max:16}).withMessage('password should be min 4 digits'),
-  
-  
-  (req,res,next)=>{
+exports.signup_user = async function(req,res){
 
-      var errmessage = "";
-      const error = validationResult(req)
+    const userExists = await User.find({ username: req.body.username });
+    if (userExists.length > 0) {
+      return res.status(409).json({
+        error: "Username already exists",
+      });
+    }
+    
+    User.create(
+        { username: req.body.username, password: req.body.password },
+         (err, user) => {
+          if (err) return next(err);
 
-      if(req.body.password !== req.body.confirmPassword){
-          errmessage = "password not match"
-      }
+          jwt.sign(
+            { id: user._id, username: user.username },
+            "random number",
+            { expiresIn: "5m" },
+            (err, token) => {
+              if (err) return console.log(next(err));
 
-      if(!error.isEmpty()){
-          res.render('signup' ,{error:error.array(),errMess:errmessage})
-          return;
-      }else{
-          //const hashPassword = bcrypt.hash(req.body.password,10)
-          //register user
-          const user = new User({
-              username:req.body.username,
-              password:req.body.password
-          })
-          user.save(function (err){
-              if(err) return next(err)
-
-              res.status(200).json({msg:"user created"})
-          })
-
-      }
-      
-  } 
-]
-
+              return res.status(200).json({
+                token,
+                user: {
+                  id: user._id,
+                  username: user.username,
+                },
+                message: "Signup successful",
+              });
+            }
+          );
+        }
+      );
+}
