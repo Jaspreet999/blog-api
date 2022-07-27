@@ -11,10 +11,8 @@ const commentRoutes = require('./routes/comment')
 const port = process.env.port || 3001 
 
 // database connectivity
-const url = "mongodb+srv://m-001-student:m001-mongodb@sandbox.zoqk7.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
-mongoose.connect(url,{useNewUrlParser:true,useUnifiedTopology:true})
-var db = mongoose.connection;
-db.on('error',console.error.bind(console,"Connection Error"))
+const url = ""
+
 
 const app = express()
 
